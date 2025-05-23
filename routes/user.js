@@ -12,26 +12,28 @@ function isAuthenticated(req, res, next) {
     res.status(401).json({ message: 'No autenticado' });
 }
 
-// Ruta para obtener datos del usuario autenticado
-router.get('/user', isAuthenticated, async (req, res) => {
+router.get('/user', isAuthenticated, (req, res) => {
     const usuario_id = req.query.usuario_id || req.body.usuario_id;
 
-    // Aquí deberías consultar la base de datos para obtener datos del usuario
-    // Por ejemplo:
-    const [user] = await db.query('SELECT usuario_id, nombre_usuario, contraseña FROM usuarios WHERE usuario_id = ?', [usuario_id]);
-    if (user.length === 0) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
-    res.json(user[0]);
-
-    // Por ahora, simulamos respuesta
-    return res.status(200).send({
-        "message": "Login susefuly",
-        usuario: {
-            usuario_id: usuario.usuario_id,
-            nombre_usuario: usuario.nombre_usuario,
-            correo: usuario.correo
+    db.query('SELECT usuario_id, nombre_usuario, correo FROM usuarios WHERE usuario_id = ?', [usuario_id], (err, user) => {
+        if (err) {
+            console.error('Error al consultar usuario:', err);
+            return res.status(500).json({ message: 'Error interno del servidor' });
         }
+
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        res.status(200).json({
+            message: "Usuario encontrado exitosamente",
+            usuario: {
+                usuario_id: user[0].usuario_id,
+                nombre_usuario: user[0].nombre_usuario,
+                correo: user[0].correo
+            }
+        });
     });
 });
+
 module.exports = router;
